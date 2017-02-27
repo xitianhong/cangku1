@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <style>
+    *{
+      padding: 0;
+      margin: 0;
+    }
+    ul,li{
+      list-style: none;
+    }
+    .tree-switch{
+      display: inline-block;
+      cursor: pointer;
+      width: 20px;
+      text-align: center;
+    }
+    .tree-content{
+      padding-left: 40px;
+    }
+    .tree-left{
+      padding-left: 40px;
+    }
+    .title{
+      background:#ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <script>
+    var nodes = [ 
+      {
+        name: "父节点1", 
+        children: [ {name: "子节点1"}, {name: "子节点2"} ]
+      }, 
+
+      {
+        name: "父节点2", 
+        children: [ 
+          {name: "子节点3"},  
+          {
+            name: "内父节点1", 
+            children:[ 
+              {name:"子节点5"}, 
+              {name:"子节点5"}, 
+              {name:"内父节点2", children: [ {name: "子节点1"}, {name: "子节点2"} ]} ,
+               {name:"内父节点3", children: [ {name: "子节点1"}, {name: "子节点2"} ]}
+            ]
+          }
+        ]
+      } 
+    ];
+    function createFolderNode(name){ //创建组合对象的div
+      var div  = document.createElement('div');
+      div.className = 'tree-content';
+      div.innerHTML = '<div class="title ">\
+          <span class="tree-switch out">-</span>\
+          <span>'+name+'</span>\
+        </div>';
+      return div;
+    }
+    function createLeftNode(name){ // 创建叶节点对象的div
+      var div  = document.createElement('div');
+      div.className = 'tree-left';
+      div.innerHTML = name
+      return div;
+    }
+    var Folder = function(name){ // 创建组合对象 
+      this.name = name;
+      this.files = []; // 用来保存子节点
+      this.parent = null; //当前组合对象的父节点
+      this.node = createFolderNode(this.name) //创建组合对象对应的dom
+    }
+    Folder.prototype.add = function(file){ // 添加子节点 组合对象才有子节点，叶节点对象没有子节点
+      file.parent = this.node; // 关联子节点和父节点
+      this.files.push(file);
+    }
+    Folder.prototype.render = function(){
+      
+      this.parent ? this.parent.appendChild(this.node) : document.body.appendChild(this.node); //把当前dom插入到页面中
+      var switchBtn = this.node.querySelector( '.tree-switch');
+      var _this = this;
+      switchBtn.onclick = function(){ // 设置点击切换事件
+        var i = 0;
+        var children = _this.node.children;
+        var length = children.length;
+        if(this.classList.contains('out')){
+          this.className = 'tree-switch in';
+          this.innerHTML = '+';
+          for(var item; item = children[i++]; ){
+            if(i === 1) continue;
+            item.style.display = 'none';
+          }
+
+        }else{
+          this.className = 'tree-switch out';
+           this.innerHTML = '-';
+          for(var item; item = children[i++]; ){
+            if(i === 1) continue;
+            item.style.display = 'block';
+          }
+        }
+      }
+      for(var i = 0, item; item = this.files[i++];){
+        item.render(); //调用所有子节点的render方法
+      }
+    }
+
+
+    var Left = function(name){ // 创建叶节点
+      this.name = name;
+      this.parent = null; //当前叶节点的父节点
+      this.node = createLeftNode(this.name); 
+    }
+    Left.prototype.render = function(){ // 渲染叶节点
+      this.parent.appendChild(this.node);
+    }
+
+
+    function setTree(nodes){ // 设置整棵树的树形关系
+      var arr = []; 
+      for(var i = 0, item; item = nodes[i++];){
+        
+        if(item.children){ // 有children说明是组合对象，反之说明是叶节点对象 
+                           
+          var folder = new Folder(item.name); // 创建一个组合对象
+          arr.push (folder);  // 把组合对象添加到数组，最后返回
+          var children = setTree(item.children) // 递归children对象,设置children的树形关系
+          children.map(function(item){ // 通过组合对象的add方法 设置父子节点关系 组成树形关系
+            folder.add(item);
+          })
+          
+        }else{
+          var left = new Left(item.name) //创建叶节点
+          arr.push(left); 
+        }
+
+      }
+      return arr;
+    }
+    var a = setTree(nodes); //最后生成 2个组合对象 然后调用他们的render方法，渲染tree
+    for(var i = 0, item; item = a[i++];){
+      item.render();
+    }
+  </script>
+</body>
+</html>
